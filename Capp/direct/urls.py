@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import payroll
+from Capp.direct import challans, payroll
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -14,4 +14,13 @@ urlpatterns = [
     path('direct/payroll/<int:pk>/finalize/', payroll.capp_dir_payroll_finalize, name='capp_dir_payroll_finalize'),
     path('direct/payroll/<int:pk>/paid/', payroll.capp_dir_payroll_paid, name='capp_dir_payroll_paid'),
     path('direct/payroll/<int:pk>/delete/', payroll.capp_dir_payroll_delete, name='capp_dir_payroll_delete'),
+    path('direct/challans/', challans.capp_dir_challans, name='capp_dir_challans'),
+    path('direct/challans/ecr/create/', challans.capp_dir_ecr_create, name='capp_dir_ecr_create'),
+    path('direct/challans/<int:year>/<int:month>/ecr/', challans.capp_dir_ecr_text, name='capp_dir_ecr_text'),
+    path('direct/challans/<int:year>/<int:month>/epf-challan/', challans.capp_dir_epf_challan, name='capp_dir_epf_challan'),
+    path('direct/challans/<int:year>/<int:month>/esi-challan/', challans.capp_dir_esi_challan, name='capp_dir_esi_challan'),
+    path('direct/challans/<int:year>/<int:month>/esi-upload/', challans.capp_dir_esi_upload, name='capp_dir_esi_upload'),
+    path('direct/challans/<int:year>/<int:month>/pt/', challans.capp_dir_pt_schedule, name='capp_dir_pt_schedule'),
+    path('direct/challans/lwf/create/', challans.capp_dir_lwf_create, name='capp_dir_lwf_create'),
+    path('direct/challans/lwf/<int:lwf_id>/challan/', challans.capp_dir_lwf_challan, name='capp_dir_lwf_challan'),
 ]
