@@ -72,3 +72,9 @@ Other generators (phase2–5, pow) follow the same shape (`@login_required` + se
 3. **D5 report list:** default list approved (wages-act reports, fines, deductions, OT registers, PT schedule).
 4. **Gates:** statutory registration decides deduction and availability. EPF number on file = EPF deduction and ECR; no number = none. Same for ESIC, Labour (LWF needs Shop Act too), Shop Act, PT, TAN. This is the existing `get_company_gates()` rule. D3 applies it before offering any file. Aapp plan-feature gating (`require_feature`) is **not** applied in Capp.
 5. **Final check before finalize:** the D4 month-end checklist is the last step of the batch flow and is shown on the Finalize confirmation page, so the owner can review attendance, loans, gates, batch totals and challans before approving.
+
+## 8. C1 answers, round 2 (owner, 22-11-2026)
+- **D5 reports:** default list **plus** any other Aapp return the company needs per its statutory registrations (shown only when the registration is on file, via `get_company_gates()`). AI-2 will list the extra returns in the D5 handoff for confirmation before building them.
+- **Final check:** the checklist is shown on the Finalize confirmation page, before approval.
+- **Sapp "change approved batch status" screen:** AI-1 builds it. AI-2 stays out of Sapp.
+- **Plan gating:** statutory gates only; no Aapp `require_feature` in Capp.
