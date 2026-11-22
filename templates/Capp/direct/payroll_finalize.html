@@ -2,6 +2,10 @@
 {% block title %}Finalize {{ label }}{% endblock %}
 {% block content %}
 <div class="section-header"><h2>Finalize: {{ label }}</h2></div>
+<h3>Last check before you finalize</h3>
+<p>{% if warnings %}<strong>{{ warnings }} item(s) need a look.</strong> You can still finalize; this is for your review.{% else %}Everything checks out.{% endif %}</p>
+{% include 'Capp/direct/_checklist_items.html' %}
+
 <div class="card"><div class="card-body">
   <p><strong>Finalizing locks this month.</strong> It cannot be processed again or deleted. Check the figures first.</p>
   <table class="table">

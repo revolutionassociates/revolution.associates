@@ -18,6 +18,7 @@ from Aapp.app.salary_processing import (
     MONTH_CHOICES, YEAR_CHOICES, salary_processing, salary_slip)
 from Aapp.app.services import payroll_batch as svc
 from Capp.audit import log_action
+from Capp.direct.checklist import build_checklist
 from Capp.direct.guards import direct_perm
 
 MONTHS = dict(MONTH_CHOICES)
@@ -137,8 +138,10 @@ def capp_dir_payroll_finalize(request, pk):
     batch = _batch(request, pk)
     if batch.status not in CAN_FINALIZE or batch.total_employees < 1:
         return _blocked(request, batch, 'Only a processed batch with employees can be finalized.')
+    items = build_checklist(request.owned_company, batch.month, batch.year)
     return render(request, 'Capp/direct/payroll_finalize.html', {
-        'batch': batch, 'label': _label(batch)})
+        'batch': batch, 'label': _label(batch), 'items': items,
+        'warnings': sum(i['status'] == 'warn' for i in items)})
 
 
 @transaction.atomic
