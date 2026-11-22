@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import challans, checklist, payroll
+from Capp.direct import challans, checklist, payroll, reports
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -24,4 +24,7 @@ urlpatterns = [
     path('direct/challans/lwf/create/', challans.capp_dir_lwf_create, name='capp_dir_lwf_create'),
     path('direct/challans/lwf/<int:lwf_id>/challan/', challans.capp_dir_lwf_challan, name='capp_dir_lwf_challan'),
     path('direct/checklist/', checklist.capp_dir_checklist, name='capp_dir_checklist'),
+    path('direct/reports/', reports.capp_dir_reports, name='capp_dir_reports'),
+    path('direct/reports/<int:year>/<int:month>/<slug:kind>/', reports.capp_dir_report, name='capp_dir_report'),
+    path('direct/reports/form24q/<str:financial_year>/', reports.capp_dir_form24q, name='capp_dir_form24q'),
 ]

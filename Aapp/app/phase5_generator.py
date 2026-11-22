@@ -357,44 +357,20 @@ def download_form24q_export(request, financial_year):
     only wraps it in an .xlsx so it can actually be handed to a filer,
     per the docstring's own note ("ready to hand to an Excel export").
     """
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill
-    from Aapp.app.form16 import tds_filing_helper_rows
+    from Aapp.app.services import reports as rp
+    from Aapp.app.services.statutory_files import StatutoryFileError
 
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
 
-    rows = tds_filing_helper_rows(company, financial_year)
-    if not rows:
-        raise Http404(
-            f'No employees with PAN and TDS activity found for FY {financial_year}.'
-        )
+    try:
+        content, fname = rp.build_form24q_xlsx(company, financial_year)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = 'Form 24Q Prep'
-
-    headers = ['Employee Code', 'Employee Name', 'PAN', 'Gross Salary', 'TDS Deducted', 'Regime']
-    ws.append(headers)
-    for cell in ws[1]:
-        cell.font = Font(bold=True, color='FFFFFF')
-        cell.fill = PatternFill('solid', fgColor='0B2545')
-
-    for r in rows:
-        ws.append([r['employee_code'], r['employee_name'], r['pan'],
-                   float(r['gross_salary']), float(r['tds_deducted']), r['regime']])
-
-    for col_letter, width in zip('ABCDEF', [14, 26, 12, 16, 16, 10]):
-        ws.column_dimensions[col_letter].width = width
-
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
-
-    fname = f'Form24Q_Prep_{company.company_name.replace(" ", "_")}_{financial_year}.xlsx'
     response = HttpResponse(
-        buffer.read(),
+        content,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
