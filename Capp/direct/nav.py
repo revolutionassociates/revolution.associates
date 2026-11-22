@@ -2,4 +2,7 @@
 
 Each item: {"label", "url_name", "perm", "modes"}; modes subset of {"DIRECT","ASSOCIATE"}.
 """
-NAV = []
+NAV = [
+    {"label": "Statutory setup", "url_name": "capp_dir_statutory",
+     "perm": "statutory.edit", "modes": ["DIRECT"]},
+]
