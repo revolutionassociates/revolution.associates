@@ -263,42 +263,20 @@ def select_period_for_fines(request):
 @login_required
 @require_feature("payment_of_wages")
 def download_fines_register(request, month, year):
-    from Aapp.app.wages import wages_fine
+    from Aapp.app.services import registers as rg
+    from Aapp.app.services.statutory_files import NothingToGenerate, StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
 
-    records = (wages_fine.objects
-               .filter(company=company, salary_month=month, salary_year=year)
-               .select_related('employee').order_by('employee__name', 'fine_date'))
-    if not records.exists():
-        return _no_data_response(request, 'select_period_for_fines', 'Fines Register (Form I) — Select Period',
-                                  month, year, f'No fines recorded for {calendar.month_name[month]} {year}.')
-
-    story = [kv_table([('Establishment Name', company.company_name), ('Period', f'{month}/{year}')])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Employee', 'Date', 'Reason', 'Amount (₹)']]
-    total = 0
-    for f in records:
-        rows.append([f.employee.name, f.fine_date.strftime('%d-%b-%Y'), f.fine_reason, INR(f.fine_amount)])
-        total += f.fine_amount
-    rows.append(['', '', 'TOTAL', INR(total)])
-
-    t = Table(rows, colWidths=[140, 80, 200, 90])
-    t.setStyle(TableStyle(HEADER_STYLE + [
-        ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
-        ('FONTNAME', (0, -1), (-1, -1), _basefont_bold),
-    ]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Fines Register (Form I)', 'doc_number': f'FINES-{month}-{year}'})
-    except Exception as e:
-        logger.exception('Fines register PDF failed for %s/%s: %s', month, year, e)
-        raise Http404('Could not generate Fines register.')
+        pdf, fname = rg.build_fines_register_pdf(company, month, year)
+    except NothingToGenerate as e:
+        return _no_data_response(request, 'select_period_for_fines', 'Fines Register (Form I) — Select Period',
+                                  month, year, str(e))
+    except StatutoryFileError as e:
+        raise Http404(str(e))
 
-    fname = f'Fines_Register_{company.company_name.replace(" ", "_")}_{month}_{year}.pdf'
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
@@ -315,42 +293,20 @@ def select_period_for_deductions(request):
 @login_required
 @require_feature("payment_of_wages")
 def download_deductions_register_wages(request, month, year):
-    from Aapp.app.wages import wages_deduction
+    from Aapp.app.services import registers as rg
+    from Aapp.app.services.statutory_files import NothingToGenerate, StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
 
-    records = (wages_deduction.objects
-               .filter(company=company, salary_month=month, salary_year=year)
-               .select_related('employee').order_by('employee__name'))
-    if not records.exists():
-        return _no_data_response(request, 'select_period_for_deductions', 'Deductions Register (Form II) — Select Period',
-                                  month, year, f'No deductions recorded for {calendar.month_name[month]} {year}.')
-
-    story = [kv_table([('Establishment Name', company.company_name), ('Period', f'{month}/{year}')])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Employee', 'Type', 'Reason', 'Amount (₹)']]
-    total = 0
-    for d in records:
-        rows.append([d.employee.name, d.get_deduction_type_display(), d.reason, INR(d.deduction_amount)])
-        total += d.deduction_amount
-    rows.append(['', '', 'TOTAL', INR(total)])
-
-    t = Table(rows, colWidths=[140, 100, 180, 90])
-    t.setStyle(TableStyle(HEADER_STYLE + [
-        ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
-        ('FONTNAME', (0, -1), (-1, -1), _basefont_bold),
-    ]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Deductions Register (Form II)', 'doc_number': f'DEDUCT-{month}-{year}'})
-    except Exception as e:
-        logger.exception('Deductions register PDF failed for %s/%s: %s', month, year, e)
-        raise Http404('Could not generate Deductions register.')
+        pdf, fname = rg.build_deductions_register_pdf(company, month, year)
+    except NothingToGenerate as e:
+        return _no_data_response(request, 'select_period_for_deductions', 'Deductions Register (Form II) — Select Period',
+                                  month, year, str(e))
+    except StatutoryFileError as e:
+        raise Http404(str(e))
 
-    fname = f'Deductions_Register_{company.company_name.replace(" ", "_")}_{month}_{year}.pdf'
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
@@ -367,44 +323,20 @@ def select_period_for_ot_register(request):
 @login_required
 @require_feature("overtime")
 def download_ot_register(request, month, year):
-    from Aapp.app.attandance import MinimumWagesOvertimeRegister, attendance
+    from Aapp.app.services import registers as rg
+    from Aapp.app.services.statutory_files import NothingToGenerate, StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
 
-    records = (MinimumWagesOvertimeRegister.objects
-               .filter(attendance__companyid=company,
-                       attendance__salary_month=month, attendance__salary_year=year)
-               .select_related('attendance').order_by('attendance__emp_code', 'ot_date'))
-    if not records.exists():
-        return _no_data_response(request, 'select_period_for_ot_register', 'Overtime Register (Form IV) — Select Period',
-                                  month, year, f'No overtime records found for {calendar.month_name[month]} {year}.')
-
-    story = [kv_table([('Establishment Name', company.company_name), ('Period', f'{month}/{year}')])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Emp Code', 'OT Date', 'Hours', 'Ordinary Rate', 'OT Rate', 'OT Wages Paid']]
-    total = 0
-    for r in records:
-        rows.append([r.attendance.emp_code, r.ot_date.strftime('%d-%b-%Y'),
-                     str(r.overtime_hours), INR(r.ordinary_rate), INR(r.ot_rate), INR(r.ot_wages_paid)])
-        total += r.ot_wages_paid
-    rows.append(['', '', '', '', 'TOTAL', INR(total)])
-
-    t = Table(rows, colWidths=[80, 80, 60, 90, 90, 100])
-    t.setStyle(TableStyle(HEADER_STYLE + [
-        ('ALIGN', (2, 0), (5, -1), 'RIGHT'),
-        ('FONTNAME', (0, -1), (-1, -1), _basefont_bold),
-    ]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Overtime Register (Form IV)', 'doc_number': f'OT-{month}-{year}'})
-    except Exception as e:
-        logger.exception('OT register PDF failed for %s/%s: %s', month, year, e)
-        raise Http404('Could not generate Overtime register.')
+        pdf, fname = rg.build_ot_register_pdf(company, month, year)
+    except NothingToGenerate as e:
+        return _no_data_response(request, 'select_period_for_ot_register', 'Overtime Register (Form IV) — Select Period',
+                                  month, year, str(e))
+    except StatutoryFileError as e:
+        raise Http404(str(e))
 
-    fname = f'Overtime_Register_{company.company_name.replace(" ", "_")}_{month}_{year}.pdf'
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
