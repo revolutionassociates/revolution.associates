@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import bonus, challans, checklist, contract_labour as cl, factory, nominations, payroll, registers, reports, returns
+from Capp.direct import bonus, challans, checklist, contract_labour as cl, factory, fnf, nominations, payroll, registers, reports, returns
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -90,4 +90,16 @@ urlpatterns = [
     path('direct/contract-labour/contractors/<int:cid>/<slug:key>/pdf/', cl.capp_dir_cl_list_pdf, name='capp_dir_cl_list_pdf'),
     path('direct/contract-labour/contractors/<int:cid>/<slug:key>/<int:pk>/delete/', cl.capp_dir_cl_delete, name='capp_dir_cl_delete'),
     path('direct/contract-labour/contractors/<int:cid>/<slug:key>/<int:pk>/pdf/', cl.capp_dir_cl_pdf, name='capp_dir_cl_pdf'),
+    path('direct/fnf/', fnf.capp_dir_fnf, name='capp_dir_fnf'),
+    path('direct/fnf/relieve/', fnf.capp_dir_relieve, name='capp_dir_relieve'),
+    path('direct/fnf/reinstate/<int:eid>/', fnf.capp_dir_reinstate, name='capp_dir_reinstate'),
+    path('direct/fnf/add/', fnf.capp_dir_fnf_add, name='capp_dir_fnf_add'),
+    path('direct/fnf/<int:pk>/', fnf.capp_dir_fnf_view, name='capp_dir_fnf_view'),
+    path('direct/fnf/<int:pk>/edit/', fnf.capp_dir_fnf_edit, name='capp_dir_fnf_edit'),
+    path('direct/fnf/<int:pk>/recompute/', fnf.capp_dir_fnf_recompute, name='capp_dir_fnf_recompute'),
+    path('direct/fnf/<int:pk>/delete/', fnf.capp_dir_fnf_delete, name='capp_dir_fnf_delete'),
+    path('direct/fnf/<int:pk>/finalize/', fnf.capp_dir_fnf_finalize, name='capp_dir_fnf_finalize'),
+    path('direct/fnf/<int:pk>/paid/', fnf.capp_dir_fnf_paid, name='capp_dir_fnf_paid'),
+    path('direct/fnf/<int:pk>/pdf/', fnf.capp_dir_fnf_pdf, name='capp_dir_fnf_pdf'),
+    path('direct/fnf/<int:pk>/certificate/<slug:cert_type>/', fnf.capp_dir_fnf_cert, name='capp_dir_fnf_cert'),
 ]
