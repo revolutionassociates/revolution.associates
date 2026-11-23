@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import challans, checklist, payroll, registers, reports
+from Capp.direct import challans, checklist, nominations, payroll, registers, reports
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -32,4 +32,11 @@ urlpatterns = [
     path('direct/registers/<slug:key>/add/', registers.capp_dir_reg_add, name='capp_dir_reg_add'),
     path('direct/registers/<slug:key>/<int:pk>/delete/', registers.capp_dir_reg_delete, name='capp_dir_reg_delete'),
     path('direct/registers/<slug:key>/<int:year>/<int:month>/pdf/', registers.capp_dir_reg_download, name='capp_dir_reg_download'),
+    path('direct/nominations/', nominations.capp_dir_nominations, name='capp_dir_noms'),
+    path('direct/nominations/<slug:key>/', nominations.capp_dir_nom_list, name='capp_dir_nom_list'),
+    path('direct/nominations/<slug:key>/add/', nominations.capp_dir_nom_add, name='capp_dir_nom_add'),
+    path('direct/nominations/<slug:key>/download/', nominations.capp_dir_nom_download, name='capp_dir_nom_download'),
+    path('direct/nominations/<slug:key>/<int:pk>/edit/', nominations.capp_dir_nom_edit, name='capp_dir_nom_edit'),
+    path('direct/nominations/<slug:key>/<int:pk>/delete/', nominations.capp_dir_nom_delete, name='capp_dir_nom_delete'),
+    path('direct/nominations/<slug:key>/<int:pk>/remove/', nominations.capp_dir_nom_remove, name='capp_dir_nom_remove'),
 ]

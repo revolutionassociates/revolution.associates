@@ -75,33 +75,15 @@ def _company(request):
 
 @login_required
 def download_gratuity_nominee_register(request):
-    from Aapp.app.gratuity import gratuity_nominee
+    from Aapp.app.services import nominations as nom
+    from Aapp.app.services.statutory_files import StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
-    records = gratuity_nominee.objects.filter(company=company).select_related('employee').order_by('employee__name')
-    if not records.exists():
-        raise Http404('No gratuity nominees registered.')
-
-    story = [kv_table([('Establishment Name', company.company_name)])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Employee', 'Nominee', 'Relationship', 'Share %', 'Aadhaar', 'Minor?']]
-    for n in records:
-        rows.append([n.employee.name, n.nominee_name, n.get_relationship_display(),
-                     f'{n.share_percent}%', n.aadhar_number or '—', 'Yes' if n.is_minor else 'No'])
-    t = Table(rows, colWidths=[100, 100, 90, 55, 90, 50])
-    t.setStyle(TableStyle(HEADER_STYLE))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Gratuity Act 1972 — Nominee Register (Form F)',
-                                                    'doc_number': f'GRAT-NOM-{company.company_id}'})
-    except Exception as e:
-        logger.exception('Gratuity nominee register PDF failed for company=%s: %s', company.company_id, e)
-        raise Http404('Could not generate Gratuity Nominee register.')
-
-    fname = f'Gratuity_Nominee_Register_{company.company_name.replace(" ", "_")}.pdf'
+        pdf, fname = nom.build_gratuity_nominee_register_pdf(company)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
@@ -111,34 +93,15 @@ def download_gratuity_nominee_register(request):
 
 @login_required
 def download_epf_nomination_register(request):
-    from Aapp.app.epf_esi import EpfNomination
+    from Aapp.app.services import nominations as nom
+    from Aapp.app.services.statutory_files import StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
-    records = EpfNomination.objects.filter(company=company).select_related('employee').order_by('employee__name')
-    if not records.exists():
-        raise Http404('No EPF nominations recorded.')
-
-    story = [kv_table([('Establishment Name', company.company_name)])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Employee', 'Nominee', 'Relationship', 'Share %', 'EPS Nominee?', 'Nomination Date']]
-    for n in records:
-        rows.append([n.employee.employeecode, n.nominee_name, n.get_relationship_display(),
-                     f'{n.share_percent}%', 'Yes' if n.is_eps_nominee else 'No',
-                     n.nomination_date.strftime('%d-%b-%Y')])
-    t = Table(rows, colWidths=[80, 100, 90, 55, 80, 90])
-    t.setStyle(TableStyle(HEADER_STYLE))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'EPF Nomination & Declaration Register (Form 2)',
-                                                    'doc_number': f'EPF-NOM-{company.company_id}'})
-    except Exception as e:
-        logger.exception('EPF nomination register PDF failed for company=%s: %s', company.company_id, e)
-        raise Http404('Could not generate EPF Nomination register.')
-
-    fname = f'EPF_Nomination_Register_{company.company_name.replace(" ", "_")}.pdf'
+        pdf, fname = nom.build_epf_nomination_register_pdf(company)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
@@ -148,34 +111,15 @@ def download_epf_nomination_register(request):
 
 @login_required
 def download_esi_family_register(request):
-    from Aapp.app.epf_esi import EsiFamilyMember
+    from Aapp.app.services import nominations as nom
+    from Aapp.app.services.statutory_files import StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
-    records = EsiFamilyMember.objects.filter(company=company).select_related('employee').order_by('employee__name')
-    if not records.exists():
-        raise Http404('No ESI family members declared.')
-
-    story = [kv_table([('Establishment Name', company.company_name)])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Employee', 'Member Name', 'Relationship', 'DOB', 'Status']]
-    for m in records:
-        status = 'Active' if not m.date_removed else f'Removed {m.date_removed.strftime("%d-%b-%Y")}'
-        rows.append([m.employee.employeecode, m.member_name, m.get_relationship_display(),
-                     m.date_of_birth.strftime('%d-%b-%Y') if m.date_of_birth else '—', status])
-    t = Table(rows, colWidths=[80, 110, 90, 80, 120])
-    t.setStyle(TableStyle(HEADER_STYLE))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'ESI Family Declaration Register (Form 1A)',
-                                                    'doc_number': f'ESI-FAM-{company.company_id}'})
-    except Exception as e:
-        logger.exception('ESI family register PDF failed for company=%s: %s', company.company_id, e)
-        raise Http404('Could not generate ESI Family register.')
-
-    fname = f'ESI_Family_Register_{company.company_name.replace(" ", "_")}.pdf'
+        pdf, fname = nom.build_esi_family_register_pdf(company)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response

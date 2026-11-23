@@ -263,34 +263,15 @@ def download_accident_register(request, factory_id):
 
 @login_required
 def download_leave_wages_register(request):
-    from Aapp.app.factory_act import LeaveWithWagesRegister
+    from Aapp.app.services import nominations as nom
+    from Aapp.app.services.statutory_files import StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
-    records = (LeaveWithWagesRegister.objects.filter(employee__CompanyID=company)
-               .select_related('employee').order_by('-year', 'employee__name'))
-    if not records.exists():
-        raise Http404('No leave-with-wages records found for this company.')
-
-    story = [kv_table([('Establishment Name', company.company_name)])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Employee', 'Year', 'Opening', 'Earned', 'Availed', 'Lapsed', 'Encashed', 'Amount (₹)']]
-    for r in records:
-        rows.append([r.employee.name, str(r.year), str(r.opening_balance), str(r.leave_earned),
-                     str(r.leave_availed), str(r.leave_lapsed), str(r.leave_encashed), INR(r.encashment_amount)])
-    t = Table(rows, colWidths=[100, 45, 60, 60, 60, 60, 65, 75])
-    t.setStyle(TableStyle(HEADER_STYLE + [('ALIGN', (2, 0), (-1, -1), 'RIGHT')]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Leave With Wages Register (Form 15)',
-                                                    'doc_number': f'LWW-{company.company_id}'})
-    except Exception as e:
-        logger.exception('Leave with wages register PDF failed for company=%s: %s', company.company_id, e)
-        raise Http404('Could not generate Leave With Wages register.')
-
-    fname = f'Leave_With_Wages_Register_{company.company_name.replace(" ", "_")}.pdf'
+        pdf, fname = nom.build_leave_wages_register_pdf(company)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
