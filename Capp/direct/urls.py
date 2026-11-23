@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import bonus, challans, checklist, factory, nominations, payroll, registers, reports, returns
+from Capp.direct import bonus, challans, checklist, contract_labour as cl, factory, nominations, payroll, registers, reports, returns
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -70,4 +70,24 @@ urlpatterns = [
     path('direct/factory/<int:fid>/<slug:key>/add/', factory.capp_dir_fac_add, name='capp_dir_fac_add'),
     path('direct/factory/<int:fid>/<slug:key>/download/', factory.capp_dir_fac_download, name='capp_dir_fac_download'),
     path('direct/factory/<int:fid>/<slug:key>/<int:pk>/delete/', factory.capp_dir_fac_delete, name='capp_dir_fac_delete'),
+    path('direct/contract-labour/', cl.capp_dir_cl, name='capp_dir_cl'),
+    path('direct/contract-labour/registration/add/', cl.capp_dir_cl_reg_add, name='capp_dir_cl_reg_add'),
+    path('direct/contract-labour/registration/<int:pk>/edit/', cl.capp_dir_cl_reg_edit, name='capp_dir_cl_reg_edit'),
+    path('direct/contract-labour/registration/<int:pk>/delete/', cl.capp_dir_cl_reg_delete, name='capp_dir_cl_reg_delete'),
+    path('direct/contract-labour/registration/<int:pk>/pdf/', cl.capp_dir_cl_reg_pdf, name='capp_dir_cl_reg_pdf'),
+    path('direct/contract-labour/contractors/add/', cl.capp_dir_cl_con_add, name='capp_dir_cl_con_add'),
+    path('direct/contract-labour/contractors/<int:cid>/edit/', cl.capp_dir_cl_con_edit, name='capp_dir_cl_con_edit'),
+    path('direct/contract-labour/contractors/<int:cid>/delete/', cl.capp_dir_cl_con_delete, name='capp_dir_cl_con_delete'),
+    path('direct/contract-labour/contractors/<int:cid>/returns/', cl.capp_dir_cl_ret, name='capp_dir_cl_ret'),
+    path('direct/contract-labour/contractors/<int:cid>/returns/add/', cl.capp_dir_cl_ret_add, name='capp_dir_cl_ret_add'),
+    path('direct/contract-labour/contractors/<int:cid>/returns/<int:pk>/edit/', cl.capp_dir_cl_ret_edit, name='capp_dir_cl_ret_edit'),
+    path('direct/contract-labour/contractors/<int:cid>/returns/<int:pk>/recompute/', cl.capp_dir_cl_ret_recompute, name='capp_dir_cl_ret_recompute'),
+    path('direct/contract-labour/contractors/<int:cid>/returns/<int:pk>/delete/', cl.capp_dir_cl_ret_delete, name='capp_dir_cl_ret_delete'),
+    path('direct/contract-labour/contractors/<int:cid>/returns/<int:pk>/pdf/', cl.capp_dir_cl_ret_pdf, name='capp_dir_cl_ret_pdf'),
+    path('direct/contract-labour/contractors/<int:cid>/workers/<int:pk>/end/', cl.capp_dir_cl_worker_end, name='capp_dir_cl_worker_end'),
+    path('direct/contract-labour/contractors/<int:cid>/<slug:key>/', cl.capp_dir_cl_list, name='capp_dir_cl_list'),
+    path('direct/contract-labour/contractors/<int:cid>/<slug:key>/add/', cl.capp_dir_cl_add, name='capp_dir_cl_add'),
+    path('direct/contract-labour/contractors/<int:cid>/<slug:key>/pdf/', cl.capp_dir_cl_list_pdf, name='capp_dir_cl_list_pdf'),
+    path('direct/contract-labour/contractors/<int:cid>/<slug:key>/<int:pk>/delete/', cl.capp_dir_cl_delete, name='capp_dir_cl_delete'),
+    path('direct/contract-labour/contractors/<int:cid>/<slug:key>/<int:pk>/pdf/', cl.capp_dir_cl_pdf, name='capp_dir_cl_pdf'),
 ]

@@ -172,7 +172,8 @@ RETURNS = {
 # Other Annual-returns hub links (url name, label); later families add theirs here.
 EXTRA = [('capp_dir_bonus', 'Bonus records (Form A and C)'),
          ('capp_dir_bonus_so', 'Bonus set-on / set-off (Form B)'),
-         ('capp_dir_factories', 'Factory registers and Form 34')]
+         ('capp_dir_factories', 'Factory registers and Form 34'),
+         ('capp_dir_cl', 'Contract labour (Forms I, II, XIII, XIV, 20-CL)')]
 
 
 def _cfg(key):
