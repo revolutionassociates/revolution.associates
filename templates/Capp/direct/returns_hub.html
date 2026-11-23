@@ -6,6 +6,7 @@
   <p class="text-muted text-sm">Generate a return for a year from your finalized payroll, set the details, record the filing and download the PDF. Draft and processed batches are not counted.</p>
   <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap">
     {% for key, title, due, url in items %}<a class="button" href="{{ url }}">{{ title }} (due {{ due }})</a>{% endfor %}
+    {% for label, url in extra %}<a class="button" href="{{ url }}">{{ label }}</a>{% endfor %}
   </div>
 </div></div>
 {% endblock %}

@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import challans, checklist, nominations, payroll, registers, reports, returns
+from Capp.direct import bonus, challans, checklist, nominations, payroll, registers, reports, returns
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -46,4 +46,15 @@ urlpatterns = [
     path('direct/returns/<slug:key>/<int:pk>/recompute/', returns.capp_dir_ret_recompute, name='capp_dir_ret_recompute'),
     path('direct/returns/<slug:key>/<int:pk>/delete/', returns.capp_dir_ret_delete, name='capp_dir_ret_delete'),
     path('direct/returns/<slug:key>/<int:pk>/download/', returns.capp_dir_ret_download, name='capp_dir_ret_download'),
+    path('direct/bonus/', bonus.capp_dir_bonus, name='capp_dir_bonus'),
+    path('direct/bonus/add/', bonus.capp_dir_bonus_add, name='capp_dir_bonus_add'),
+    path('direct/bonus/<int:pk>/edit/', bonus.capp_dir_bonus_edit, name='capp_dir_bonus_edit'),
+    path('direct/bonus/<int:pk>/pay/', bonus.capp_dir_bonus_pay, name='capp_dir_bonus_pay'),
+    path('direct/bonus/<int:pk>/delete/', bonus.capp_dir_bonus_delete, name='capp_dir_bonus_delete'),
+    path('direct/bonus/register/<int:year>/<int:month>/pdf/', bonus.capp_dir_bonus_register, name='capp_dir_bonus_register'),
+    path('direct/bonus/set-on-set-off/', bonus.capp_dir_bonus_so, name='capp_dir_bonus_so'),
+    path('direct/bonus/set-on-set-off/add/', bonus.capp_dir_bonus_so_add, name='capp_dir_bonus_so_add'),
+    path('direct/bonus/set-on-set-off/<int:pk>/edit/', bonus.capp_dir_bonus_so_edit, name='capp_dir_bonus_so_edit'),
+    path('direct/bonus/set-on-set-off/<int:pk>/delete/', bonus.capp_dir_bonus_so_delete, name='capp_dir_bonus_so_delete'),
+    path('direct/bonus/set-on-set-off/<int:pk>/pdf/', bonus.capp_dir_bonus_so_pdf, name='capp_dir_bonus_so_pdf'),
 ]

@@ -1,4 +1,4 @@
-"""D5b-3a - annual returns for a DIRECT company: Minimum Wages Form V and Payment of Wages Form IV.
+"""D5b-3a - annual returns for a DIRECT company: Minimum Wages Form V and Payment of Wages Form IV and Bonus Form D.
 
 A return is generated for a calendar year from the company's FINALIZED payroll (batches APPROVED or
 PAID; draft and processed batches are ignored, unlike Aapp which counts every batch). Fines,
@@ -18,6 +18,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from Aapp.app.bonus import BonusReturnEditForm, bonus_annual_return
+from Aapp.app.services import bonus_returns as br
 from Aapp.app.services import wage_returns as wr
 from Aapp.app.services.statutory_files import StatutoryFileError
 from Aapp.app.wage_compliance import (
@@ -71,6 +73,19 @@ class PowEditForm(_EditMixin, PaymentOfWagesEditForm):
         widgets = {'filed_date': DATE}
 
 
+class BonusEditForm(_EditMixin, BonusReturnEditForm):
+    class Meta(BonusReturnEditForm.Meta):
+        widgets = {'payment_date': DATE, 'filed_date': DATE}
+
+    def clean(self):
+        d = super().clean()
+        if d.get('allocable_surplus') is not None and d['allocable_surplus'] < 0:
+            self.add_error('allocable_surplus', 'Cannot be negative.')
+        if self._filed and not d.get('payment_date'):
+            self.add_error('payment_date', 'Enter the bonus payment date before marking the return as filed.')
+        return d
+
+
 class GenerateForm(forms.Form):
     year = forms.TypedChoiceField(coerce=int, label='Year')
     category_of_work = forms.CharField(max_length=255, required=False, label='Category of work')
@@ -111,6 +126,23 @@ def _pow_summary(r):
             ('Total deductions', r.total_deductions)]
 
 
+def _bonus_row(r):
+    return [r.year, r.total_employees, r.total_wages, f'{r.bonus_percentage}%',
+            r.total_bonus_paid, r.get_filing_status_display()]
+
+
+def _bonus_summary(r):
+    return [('Total employees', r.total_employees), ('Total wages', r.total_wages),
+            ('Total bonus paid', r.total_bonus_paid), ('Bonus percentage', f'{r.bonus_percentage}%')]
+
+
+def _bonus_notes(r):
+    if r.total_bonus_paid and not 8.33 <= float(r.bonus_percentage) <= 20:
+        return [f'Bonus is {r.bonus_percentage}% of wages, outside the statutory 8.33% to 20% band. '
+                'Check the bonus records before filing.']
+    return []
+
+
 RETURNS = {
     'minimum-wages': {
         'title': 'Minimum Wages annual return (Form V)', 'model': MinimumWagesAnnualReturn,
@@ -126,7 +158,20 @@ RETURNS = {
         'columns': ['Year', 'Employees', 'Total wages paid', 'Wage period', 'Payment mode', 'Status'],
         'row': _pow_row, 'summary': _pow_summary,
     },
+    'bonus': {
+        'title': 'Bonus annual return (Form D)', 'model': bonus_annual_return,
+        'edit': BonusEditForm,
+        'compute': lambda c, y, s: br.compute_bonus_return_totals(c, y, s, paid_only=True),
+        'build': br.build_bonus_return_pdf, 'needs_category': False, 'due': '1 February',
+        'columns': ['Year', 'Employees', 'Total wages', 'Bonus %', 'Bonus paid', 'Status'],
+        'row': _bonus_row, 'summary': _bonus_summary, 'notes': _bonus_notes,
+        'wages_key': 'total_wages',
+    },
 }
+
+# Other Annual-returns hub links (url name, label); later families add theirs here.
+EXTRA = [('capp_dir_bonus', 'Bonus records (Form A and C)'),
+         ('capp_dir_bonus_so', 'Bonus set-on / set-off (Form B)')]
 
 
 def _cfg(key):
@@ -153,7 +198,8 @@ def _locked(request, rec, key, what):
 @direct_perm('payroll.process')
 def capp_dir_returns(request):
     return render(request, 'Capp/direct/returns_hub.html', {
-        'items': [(k, v['title'], v['due'], reverse('capp_dir_ret_list', args=[k])) for k, v in RETURNS.items()]})
+        'items': [(k, v['title'], v['due'], reverse('capp_dir_ret_list', args=[k])) for k, v in RETURNS.items()],
+        'extra': [(label, reverse(name)) for name, label in EXTRA]})
 
 
 @direct_perm('payroll.process')
@@ -176,7 +222,7 @@ def capp_dir_ret_generate(request, key):
             messages.error(request, f'A return for {year} already exists. Edit it instead.')
             return redirect(_list_url(key))
         totals = cfg['compute'](company, year, wr.FINAL)
-        if not totals['total_wages_paid']:
+        if not totals[cfg.get('wages_key', 'total_wages_paid')]:
             messages.error(request, f'No finalized payroll found for {year}. Finalize the monthly '
                                     'payroll batches first.')
             return redirect(_list_url(key))
@@ -202,7 +248,8 @@ def capp_dir_ret_edit(request, key, pk):
         return redirect(_list_url(key))
     return render(request, 'Capp/direct/returns_edit.html', {
         'form': form, 'title': f'{cfg["title"]}: {rec.year}', 'back': _list_url(key),
-        'summary': cfg['summary'](rec), 'filed': rec.filing_status == 'filed'})
+        'summary': cfg['summary'](rec), 'filed': rec.filing_status == 'filed',
+        'notes': cfg['notes'](rec) if 'notes' in cfg else []})
 
 
 @direct_perm('payroll.process')
@@ -214,7 +261,7 @@ def capp_dir_ret_recompute(request, key, pk):
     if locked:
         return locked
     totals = cfg['compute'](company, rec.year, wr.FINAL)
-    if not totals['total_wages_paid']:
+    if not totals[cfg.get('wages_key', 'total_wages_paid')]:
         messages.error(request, f'No finalized payroll found for {rec.year}; totals left unchanged.')
         return redirect(_list_url(key))
     for name, value in totals.items():

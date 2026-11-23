@@ -141,39 +141,16 @@ def download_minwages_return(request, return_id):
 @require_feature("bonus_act")
 def download_bonus_return(request, return_id):
     from Aapp.app.bonus import bonus_annual_return
+    from Aapp.app.services.bonus_returns import build_bonus_return_pdf
+    from Aapp.app.services.statutory_files import StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
     rec = get_object_or_404(bonus_annual_return, return_id=return_id, company=company)
-
-    story = [kv_table([
-        ('Establishment Name', company.company_name),
-        ('Return Year', str(rec.year)),
-        ('Total Employees', str(rec.total_employees)),
-        ('Payment Date', rec.payment_date.strftime('%d %b %Y') if rec.payment_date else '—'),
-    ])]
-    story.append(Spacer(1, 8 * mm))
-    story.append(section_divider())
-
-    rows = [
-        ['Particulars', 'Amount (₹)'],
-        ['Total Wages (for bonus calc)', INR(rec.total_wages)],
-        ['Allocable Surplus', INR(rec.allocable_surplus)],
-        ['Bonus Percentage', f'{rec.bonus_percentage}%'],
-        ['Total Bonus Paid', INR(rec.total_bonus_paid)],
-    ]
-    t = Table(rows, colWidths=[300, 150])
-    t.setStyle(TableStyle(HEADER_STYLE + [('ALIGN', (1, 0), (1, -1), 'RIGHT')]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Payment of Bonus Act — Annual Return (Form D)',
-                                                    'doc_number': rec.acknowledgement_no or f'BONUS-{rec.year}'})
-    except Exception as e:
-        logger.exception('Bonus return PDF failed for return_id=%s: %s', return_id, e)
-        raise Http404('Could not generate Bonus annual return.')
-
-    fname = f'Bonus_Form_D_{company.company_name.replace(" ", "_")}_{rec.year}.pdf'
+        pdf, fname = build_bonus_return_pdf(company, rec)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
@@ -185,41 +162,16 @@ def download_bonus_return(request, return_id):
 @require_feature("bonus_act")
 def download_set_on_set_off(request, record_id):
     from Aapp.app.bonus import bonus_set_on_set_off
+    from Aapp.app.services.bonus_returns import build_set_on_set_off_pdf
+    from Aapp.app.services.statutory_files import StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
     rec = get_object_or_404(bonus_set_on_set_off, record_id=record_id, company=company)
-
-    story = [kv_table([
-        ('Establishment Name', company.company_name),
-        ('Accounting Year', str(rec.year)),
-    ])]
-    story.append(Spacer(1, 8 * mm))
-    story.append(section_divider())
-
-    rows = [
-        ['Particulars', 'Amount (₹)'],
-        ['Allocable Surplus', INR(rec.allocable_surplus)],
-        ['Total Wages for Bonus', INR(rec.total_wages_for_bonus)],
-        ['Minimum Bonus (8.33%)', INR(rec.min_bonus_amount)],
-        ['Maximum Bonus (20%)', INR(rec.max_bonus_amount)],
-        ['Bonus Paid', INR(rec.bonus_paid)],
-        ['Set-On Amount', INR(rec.set_on_amount)],
-        ['Set-Off Amount', INR(rec.set_off_amount)],
-        ['Cumulative Set-On Balance', INR(rec.cumulative_set_on)],
-    ]
-    t = Table(rows, colWidths=[300, 150])
-    t.setStyle(TableStyle(HEADER_STYLE + [('ALIGN', (1, 0), (1, -1), 'RIGHT')]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Payment of Bonus Act — Set-On/Set-Off Register (Form B)',
-                                                    'doc_number': f'SETONOFF-{rec.year}'})
-    except Exception as e:
-        logger.exception('Set-on/off PDF failed for record_id=%s: %s', record_id, e)
-        raise Http404('Could not generate Set-On/Set-Off register.')
-
-    fname = f'Bonus_FormB_SetOnOff_{company.company_name.replace(" ", "_")}_{rec.year}.pdf'
+        pdf, fname = build_set_on_set_off_pdf(company, rec)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
@@ -326,44 +278,20 @@ def select_period_for_bonus_register(request):
 @login_required
 @require_feature("bonus_act")
 def download_bonus_register(request, month, year):
-    from Aapp.app.bonus import bonus_record
+    from Aapp.app.services.bonus_returns import build_bonus_register_pdf
+    from Aapp.app.services.statutory_files import NothingToGenerate, StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
 
-    records = (bonus_record.objects
-               .filter(company=company, salary_month=month, salary_year=year)
-               .select_related('employee').order_by('employee__name'))
-    if not records.exists():
-        return _no_data_response(request, 'select_period_for_bonus_register', 'Bonus Register (Form C) — Select Period',
-                                  month, year, f'No bonus records found for {calendar.month_name[month]} {year}.')
-
-    story = [kv_table([('Establishment Name', company.company_name), ('Period', f'{month}/{year}')])]
-    story.append(Spacer(1, 6 * mm))
-
-    rows = [['Employee', 'Basic Bonus', 'Perf. Bonus', 'Festival Bonus', 'Other', 'Total', 'Paid']]
-    total = 0
-    for b in records:
-        rows.append([b.employee.name, INR(b.basic_bonus), INR(b.performance_bonus),
-                     INR(b.festival_bonus), INR(b.other_bonus), INR(b.total_bonus),
-                     'Yes' if b.is_paid else 'No'])
-        total += b.total_bonus
-    rows.append(['', '', '', '', 'TOTAL', INR(total), ''])
-
-    t = Table(rows, colWidths=[110, 75, 75, 80, 65, 80, 45])
-    t.setStyle(TableStyle(HEADER_STYLE + [
-        ('ALIGN', (1, 0), (5, -1), 'RIGHT'),
-        ('FONTNAME', (0, -1), (-1, -1), _basefont_bold),
-    ]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Bonus Register (Form C)', 'doc_number': f'BONUS-REG-{month}-{year}'})
-    except Exception as e:
-        logger.exception('Bonus register PDF failed for %s/%s: %s', month, year, e)
-        raise Http404('Could not generate Bonus register.')
+        pdf, fname = build_bonus_register_pdf(company, month, year)
+    except NothingToGenerate as e:
+        return _no_data_response(request, 'select_period_for_bonus_register', 'Bonus Register (Form C) — Select Period',
+                                  month, year, str(e))
+    except StatutoryFileError as e:
+        raise Http404(str(e))
 
-    fname = f'Bonus_Register_{company.company_name.replace(" ", "_")}_{month}_{year}.pdf'
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
