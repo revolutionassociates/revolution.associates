@@ -3,6 +3,8 @@
 Each item: {"label", "url_name", "perm", "modes"}; modes subset of {"DIRECT","ASSOCIATE"}.
 """
 NAV = [
+    {"label": "Annual returns", "url_name": "capp_dir_returns",
+     "perm": "payroll.process", "modes": ["DIRECT"]},
     {"label": "Nominations and declarations", "url_name": "capp_dir_noms",
      "perm": "employees.view", "modes": ["DIRECT"]},
     {"label": "Registers", "url_name": "capp_dir_registers",

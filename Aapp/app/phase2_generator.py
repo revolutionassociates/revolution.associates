@@ -120,43 +120,16 @@ def _period_picker(request, page_title, download_url_name):
 @require_feature("min_wages")
 def download_minwages_return(request, return_id):
     from Aapp.app.wage_compliance import MinimumWagesAnnualReturn
+    from Aapp.app.services.wage_returns import build_minwages_return_pdf
+    from Aapp.app.services.statutory_files import StatutoryFileError
     company = _company(request)
     if not company:
         raise Http404('No company selected.')
     rec = get_object_or_404(MinimumWagesAnnualReturn, return_id=return_id, company=company)
-
-    story = [kv_table([
-        ('Establishment Name', company.company_name),
-        ('Return Year', str(rec.year)),
-        ('Category of Work', rec.category_of_work),
-        ('Employees (M/F)', f'{rec.total_employees_male} / {rec.total_employees_female}'),
-    ])]
-    story.append(Spacer(1, 8 * mm))
-    story.append(section_divider())
-
-    rows = [
-        ['Particulars', 'Amount (₹)'],
-        ['Min Wage Rate — Unskilled', INR(rec.min_wage_rate_unskilled)],
-        ['Min Wage Rate — Semi-skilled', INR(rec.min_wage_rate_semiskilled)],
-        ['Min Wage Rate — Skilled', INR(rec.min_wage_rate_skilled)],
-        ['Total Wages Paid', INR(rec.total_wages_paid)],
-        ['Total OT Hours', str(rec.total_ot_hours)],
-        ['Total OT Wages', INR(rec.total_ot_wages)],
-        ['Total Fines Imposed', INR(rec.total_fines_imposed)],
-        ['Total Deductions', INR(rec.total_deductions)],
-    ]
-    t = Table(rows, colWidths=[300, 150])
-    t.setStyle(TableStyle(HEADER_STYLE + [('ALIGN', (1, 0), (1, -1), 'RIGHT')]))
-    story.append(t)
-
     try:
-        pdf = build_pdf(story, company, doc_meta={'title': 'Minimum Wages Act — Annual Return (Form V)',
-                                                    'doc_number': rec.acknowledgement_no or f'MW-{rec.year}'})
-    except Exception as e:
-        logger.exception('Min wages return PDF failed for return_id=%s: %s', return_id, e)
-        raise Http404('Could not generate Minimum Wages return.')
-
-    fname = f'MinWages_Form_V_{company.company_name.replace(" ", "_")}_{rec.year}.pdf'
+        pdf, fname = build_minwages_return_pdf(company, rec)
+    except StatutoryFileError as e:
+        raise Http404(str(e))
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response

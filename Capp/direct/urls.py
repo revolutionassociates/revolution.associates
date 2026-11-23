@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import challans, checklist, nominations, payroll, registers, reports
+from Capp.direct import challans, checklist, nominations, payroll, registers, reports, returns
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -39,4 +39,11 @@ urlpatterns = [
     path('direct/nominations/<slug:key>/<int:pk>/edit/', nominations.capp_dir_nom_edit, name='capp_dir_nom_edit'),
     path('direct/nominations/<slug:key>/<int:pk>/delete/', nominations.capp_dir_nom_delete, name='capp_dir_nom_delete'),
     path('direct/nominations/<slug:key>/<int:pk>/remove/', nominations.capp_dir_nom_remove, name='capp_dir_nom_remove'),
+    path('direct/returns/', returns.capp_dir_returns, name='capp_dir_returns'),
+    path('direct/returns/<slug:key>/', returns.capp_dir_ret_list, name='capp_dir_ret_list'),
+    path('direct/returns/<slug:key>/generate/', returns.capp_dir_ret_generate, name='capp_dir_ret_generate'),
+    path('direct/returns/<slug:key>/<int:pk>/edit/', returns.capp_dir_ret_edit, name='capp_dir_ret_edit'),
+    path('direct/returns/<slug:key>/<int:pk>/recompute/', returns.capp_dir_ret_recompute, name='capp_dir_ret_recompute'),
+    path('direct/returns/<slug:key>/<int:pk>/delete/', returns.capp_dir_ret_delete, name='capp_dir_ret_delete'),
+    path('direct/returns/<slug:key>/<int:pk>/download/', returns.capp_dir_ret_download, name='capp_dir_ret_download'),
 ]
