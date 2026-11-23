@@ -2,7 +2,7 @@
 Prefix: direct/.  URL names: capp_dir_*.  Included by Capp/urls.py."""
 from django.urls import path
 
-from Capp.direct import bonus, challans, checklist, nominations, payroll, registers, reports, returns
+from Capp.direct import bonus, challans, checklist, factory, nominations, payroll, registers, reports, returns
 from Capp.direct.statutory import capp_dir_statutory
 
 urlpatterns = [
@@ -57,4 +57,17 @@ urlpatterns = [
     path('direct/bonus/set-on-set-off/<int:pk>/edit/', bonus.capp_dir_bonus_so_edit, name='capp_dir_bonus_so_edit'),
     path('direct/bonus/set-on-set-off/<int:pk>/delete/', bonus.capp_dir_bonus_so_delete, name='capp_dir_bonus_so_delete'),
     path('direct/bonus/set-on-set-off/<int:pk>/pdf/', bonus.capp_dir_bonus_so_pdf, name='capp_dir_bonus_so_pdf'),
+    path('direct/factory/', factory.capp_dir_factories, name='capp_dir_factories'),
+    path('direct/factory/add/', factory.capp_dir_factory_add, name='capp_dir_factory_add'),
+    path('direct/factory/<int:fid>/edit/', factory.capp_dir_factory_edit, name='capp_dir_factory_edit'),
+    path('direct/factory/<int:fid>/certificate/', factory.capp_dir_factory_cert, name='capp_dir_factory_cert'),
+    path('direct/factory/<int:fid>/annual-return/', factory.capp_dir_fac_ar, name='capp_dir_fac_ar'),
+    path('direct/factory/<int:fid>/annual-return/add/', factory.capp_dir_fac_ar_add, name='capp_dir_fac_ar_add'),
+    path('direct/factory/<int:fid>/annual-return/<int:pk>/edit/', factory.capp_dir_fac_ar_edit, name='capp_dir_fac_ar_edit'),
+    path('direct/factory/<int:fid>/annual-return/<int:pk>/delete/', factory.capp_dir_fac_ar_delete, name='capp_dir_fac_ar_delete'),
+    path('direct/factory/<int:fid>/annual-return/<int:pk>/download/', factory.capp_dir_fac_ar_download, name='capp_dir_fac_ar_download'),
+    path('direct/factory/<int:fid>/<slug:key>/', factory.capp_dir_fac_list, name='capp_dir_fac_list'),
+    path('direct/factory/<int:fid>/<slug:key>/add/', factory.capp_dir_fac_add, name='capp_dir_fac_add'),
+    path('direct/factory/<int:fid>/<slug:key>/download/', factory.capp_dir_fac_download, name='capp_dir_fac_download'),
+    path('direct/factory/<int:fid>/<slug:key>/<int:pk>/delete/', factory.capp_dir_fac_delete, name='capp_dir_fac_delete'),
 ]
